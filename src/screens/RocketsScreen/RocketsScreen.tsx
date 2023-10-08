@@ -1,31 +1,67 @@
-import React from 'react';
-import {FlatList, Text, View} from 'react-native';
+import React, {useEffect, useRef, useState} from 'react';
+import {FlatList, Text, View, Dimensions, Animated} from 'react-native';
+import {http} from '../../libs/http';
+import {API_METHODS} from '../../constants/api';
+import {IRocket} from '../../types/IRocket';
+import Paginator from '../../shared/Paginator';
 
-export default function RocketsScreen({navigation}) {
+import {styles} from './RocketScreenStyles';
+
+export default function RocketsScreen() {
+  const width = Dimensions.get('window').width;
+  const [rockets, setRockets] = useState<IRocket[]>([]);
+  const scrollX: Animated.Value = useRef(new Animated.Value(0)).current;
+  const [currentIndex, setCurrentIndex] = useState<number>(0);
+  const slidesRef = useRef(null);
+
+  const viewableItemsChanged = useRef(({viewableItems}: any) => {
+    setCurrentIndex(viewableItems[0]?.index);
+  }).current;
+
+  const viewConfig = useRef({
+    minimumViewTime: 50,
+    viewAreaCoveragePercentThreshold: 100,
+  }).current;
+
+  useEffect(() => {
+    http
+      .get(API_METHODS.GET_ROCKETS)
+      .then((response: {data: IRocket[]}) => setRockets(response.data));
+  }, []);
+
   return (
-    <View
-      style={{
-        flex: 1,
-        backgroundColor: 'gray',
-      }}>
+    <View style={styles.RocketsScreen}>
       <FlatList
         horizontal
-        showsHorizontalScrollIndicator
+        showsHorizontalScrollIndicator={false}
         pagingEnabled
         bounces={false}
-        data={[
-          {id: 1, text: '12321'},
-          {id: 2, text: 'dfsd'},
-          {id: 2, text: 'dfsd12'},
-        ]}
+        data={rockets}
+        keyExtractor={(item: IRocket) => item.id.toString()}
+        onViewableItemsChanged={viewableItemsChanged}
+        viewabilityConfig={viewConfig}
+        scrollEventThrottle={32}
+        ref={slidesRef}
+        onScroll={Animated.event(
+          [{nativeEvent: {contentOffset: {x: scrollX}}}],
+          {
+            useNativeDriver: false,
+          },
+        )}
         renderItem={({item}) => (
           <View
             key={item.id}
-            style={{width: '100%', backgroundColor: 'black', height: 'auto'}}>
-            <Text style={{color: 'white'}}>{item.text}</Text>
+            style={{
+              width: width,
+              backgroundColor: 'black',
+              height: 'auto',
+              flex: 1,
+            }}>
+            <Text>{item.name}</Text>
           </View>
         )}
       />
+      <Paginator data={rockets} scrollX={scrollX} windowWidth={width} />
     </View>
   );
 }
