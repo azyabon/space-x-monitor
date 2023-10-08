@@ -16,6 +16,7 @@ export default function RocketsScreen({navigation}) {
         data={[
           {id: 1, text: '12321'},
           {id: 2, text: 'dfsd'},
+          {id: 2, text: 'dfsd12'},
         ]}
         renderItem={({item}) => (
           <View
